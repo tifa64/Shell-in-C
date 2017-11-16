@@ -1,60 +1,74 @@
-#include  <stdio.h>
-#include  <sys/types.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
-void  parse(char *line, char **argv)
+void readline(char *line, char **argv)
 {
-     while (*line != '\0') {       /* if not the end of line ....... */
-          while (*line == ' ' || *line == '\t' || *line == '\n')
-               *line++ = '\0';     /* replace white spaces with 0    */
-          *argv++ = line;          /* save the argument position     */
-          while (*line != '\0' && *line != ' ' &&
-                 *line != '\t' && *line != '\n')
-               line++;             /* skip the argument until ...    */
+    gets(line);
+    *argv = NULL;
+    char* del = strtok(line," ");
+    while(del != NULL) {
+        *argv++ = del;
+        del = strtok(NULL, " ");
      }
-     *argv = '\0';                 /* mark the end of argument list  */
+     *argv = NULL;
+
+}
+int inlimit(char *line) {
+    int size = 0;
+    while(*line != NULL) {
+        *line++;
+        size++;
+    }
+    return size <= 512;
 }
 
-void  execute(char **argv)
+int main()
 {
-     pid_t  pid;
-     int    status;
+     char  input[1024];
+     char  *argv[64];
+     pid_t pid;
+     int status;
 
-     if ((pid = fork()) < 0) {     /* fork a child process           */
-          printf("*** ERROR: forking child process failed\n");
-          exit(1);
-     }
-     else if (pid == 0) {          /* for the child process:         */
-          if (execvp(*argv, argv) < 0) {     /* execute the command  */
-          if(strcmp(argv[0], "cd") == 0) {
-            if (chdir(argv[1]) < 0)
-                perror("");
-          }
-
-          else {
-               perror("*** ERROR: exec failed\n");
-               exit(1);
-            }
-          }
-     }
-     else {                                  /* for the parent:      */
-          while (wait(&status) != pid)       /* wait for completion  */
-               ;
-     }
-}
-
-void  main(void)
-{
-     char  line[1024];             /* the input line                 */
-     char  *argv[64];              /* the command line argument      */
-
-     while (1) {                   /* repeat until done ....         */
-          printf("Shell -> ");     /*   display a prompt             */
-          gets(line);              /*   read in the command line     */
+     while (1) {
+          printf("Shell -> ");
+          readline(input, argv);
           printf("\n");
-          parse(line, argv);       /*   parse the line               */
-          if (strcmp(argv[0], "exit") == 0)  /* is it an "exit"?     */
-               exit(0);            /*   exit if it is                */
-          execute(argv);           /* otherwise, execute the command */
+          if ((pid = fork()) < 0) {
+            printf("Error !! child process failed\n");
+            exit(1);
+          }
+          else if (pid == 0) {
+              if (execvp(*argv, argv) < 0) {
+                  if(strcmp(argv[0], "cd") == 0) {
+                      if (chdir(argv[1]) < 0)
+                          perror("");
+                  }
+                  else {
+                      perror("Error !! exec failed\n");
+                      exit(1);
+                  }
+             }
+         }
+         else {
+             if(!inlimit(input)) {
+                printf("Error !! characters exceeded 512\n");
+                continue;
+             }
+             int size = 0;
+             char **temp = argv;
+             while(*temp != NULL) {
+                 printf("%s\n", *temp);
+                 size++;
+                 *temp++;
+             }
+             if(strcmp(argv, "&") == 0)
+                waitpid(pid, &status, WUNTRACED);
+             else
+                while (wait(&status) != pid);
+         }
      }
+     return 0;
 }
