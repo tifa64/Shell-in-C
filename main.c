@@ -47,9 +47,9 @@ int main()
      }
 
      while (1) {
-          printf("Shell -> ");
-          readline(input, comand);
-          printf("\n");
+         printf("Shell -> ");
+         readline(input, comand);
+         printf("\n");
           if ((pid = fork()) < 0) {
             printf("Error !! child process failed\n");
             exit(1);
@@ -74,14 +74,11 @@ int main()
              int size = 0;
              char **temp = comand;
              while(*temp != NULL) {
-                 printf("%s\n", *temp);
                  size++;
                  *temp++;
              }
-             if(strcmp(comand, "&") == 0)
-                waitpid(pid, &status, WUNTRACED);
-             else
-                while (wait(&status) != pid);
+            waitpid(pid, &status, WUNTRACED);
+
          }
      }
      return 0;
