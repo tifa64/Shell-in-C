@@ -50,6 +50,8 @@ int main()
           printf("Shell -> ");
           readline(input, comand);
           printf("\n");
+          if(strcmp(comand[0],"exit") == 0)
+                exit(0);
           int size = 0, isBG = 0;
           char **temp = comand;
 	      char **temp2 = comand;
