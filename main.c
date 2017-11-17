@@ -52,7 +52,7 @@ int main()
           printf("\n");
           int size = 0, isBG = 0;
           char **temp = comand;
-	  char **temp2 = comand;
+	      char **temp2 = comand;
           while(*temp != NULL) {
                  size++;
                  *temp++;
@@ -67,8 +67,27 @@ int main()
               }
               else {
                   if(strcmp(comand[size-1], "&") == 0) {
-                      isBG = 1;
                       comand[size-1] = NULL;
+                      pid_t pid2;
+                      pid2 = fork();
+                      if(pid2 < 0) {
+                          printf("Error !! child process2 failed\n");
+                          exit(1);
+                      }
+                      else if (pid2 == 0) {
+                          if(strcmp(comand[0], "cd") == 0) {
+                              if (chdir(comand[1]) < 0)
+                                  perror("");
+                          }
+                          else {
+                              int val2 = execvp(*comand, comand);
+                              if (val2 < 0) {
+                                  printf("Error !! exec failed\n");
+                              }
+                           }
+                      }
+                      else
+                          continue;
                   }
                   if(strcmp(comand[0], "cd") == 0) {
                       if (chdir(comand[1]) < 0)
@@ -83,9 +102,9 @@ int main()
               }
          }
          else {
-            if(strcmp(temp2[size-1], "&") != 0)
-                waitpid(pid, &status, WUNTRACED);
+            wait(NULL);
         }
      }
      return 0;
 }
+
