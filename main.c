@@ -4,16 +4,16 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-void readline(char *line, char **argv)
+void readline(char *line, char **comand)
 {
     gets(line);
-    *argv = NULL;
+    *comand = NULL;
     char* del = strtok(line," ");
     while(del != NULL) {
-        *argv++ = del;
+        *comand++ = del;
         del = strtok(NULL, " ");
      }
-     *argv = NULL;
+     *comand = NULL;
 
 }
 int inlimit(char *line) {
@@ -27,23 +27,37 @@ int inlimit(char *line) {
 
 int main()
 {
-     char  input[1024];
-     char  *argv[64];
+     char  input[1000];
+     char  *comand[1000];
      pid_t pid;
      int status;
+     int c, d;
+     FILE *file, *file2;
+     file = fopen("Minion.txt", "r");
+     if (file) {
+         while ((c = getc(file)) != EOF)
+             putchar(c);
+             fclose(file);
+     }
+     file2 = fopen("Welcome.txt", "r");
+     if (file) {
+         while ((d = getc(file)) != EOF)
+             putchar(d);
+             fclose(file);
+     }
 
      while (1) {
           printf("Shell -> ");
-          readline(input, argv);
+          readline(input, comand);
           printf("\n");
           if ((pid = fork()) < 0) {
             printf("Error !! child process failed\n");
             exit(1);
           }
           else if (pid == 0) {
-              if (execvp(*argv, argv) < 0) {
-                  if(strcmp(argv[0], "cd") == 0) {
-                      if (chdir(argv[1]) < 0)
+              if (execvp(*comand, comand) < 0) {
+                  if(strcmp(comand[0], "cd") == 0) {
+                      if (chdir(comand[1]) < 0)
                           perror("");
                   }
                   else {
@@ -58,13 +72,13 @@ int main()
                 continue;
              }
              int size = 0;
-             char **temp = argv;
+             char **temp = comand;
              while(*temp != NULL) {
                  printf("%s\n", *temp);
                  size++;
                  *temp++;
              }
-             if(strcmp(argv, "&") == 0)
+             if(strcmp(comand, "&") == 0)
                 waitpid(pid, &status, WUNTRACED);
              else
                 while (wait(&status) != pid);
