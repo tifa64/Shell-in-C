@@ -50,39 +50,61 @@ int main()
           printf("Shell -> ");
           readline(input, comand);
           printf("\n");
+          int size = 0, isBG = 0;
+          char **temp = comand;
+	      char **temp2 = comand;
+          while(*temp != NULL) {
+                 size++;
+                 *temp++;
+          }
           if ((pid = fork()) < 0) {
             printf("Error !! child process failed\n");
             exit(1);
           }
           else if (pid == 0) {
-              if (execvp(*comand, comand) < 0) {
+              if(!inlimit(input)) {
+                  printf("Error !! characters exceeded 512\n");
+              }
+              else {
+                  if(strcmp(comand[size-1], "&") == 0) {
+                      comand[size-1] = NULL;
+                      pid_t pid2;
+                      pid2 = fork();
+                      if(pid2 < 0) {
+                          printf("Error !! child process2 failed\n");
+                          exit(1);
+                      }
+                      else if (pid2 == 0) {
+                          if(strcmp(comand[0], "cd") == 0) {
+                              if (chdir(comand[1]) < 0)
+                                  perror("");
+                          }
+                          else {
+                              int val2 = execvp(*comand, comand);
+                              if (val2 < 0) {
+                                  printf("Error !! exec failed\n");
+                              }
+                           }
+                      }
+                      else
+                          continue;
+                  }
                   if(strcmp(comand[0], "cd") == 0) {
                       if (chdir(comand[1]) < 0)
                           perror("");
                   }
                   else {
-                      perror("Error !! exec failed\n");
-                      exit(1);
-                  }
-             }
+                      int val = execvp(*comand, comand);
+                      if (val < 0) {
+                          printf("Error !! exec failed\n");
+                      }
+                 }
+              }
          }
          else {
-             if(!inlimit(input)) {
-                printf("Error !! characters exceeded 512\n");
-                continue;
-             }
-             int size = 0;
-             char **temp = comand;
-             while(*temp != NULL) {
-                 printf("%s\n", *temp);
-                 size++;
-                 *temp++;
-             }
-             if(strcmp(comand, "&") == 0)
-                waitpid(pid, &status, WUNTRACED);
-             else
-                while (wait(&status) != pid);
-         }
+            wait(NULL);
+        }
      }
      return 0;
 }
+
